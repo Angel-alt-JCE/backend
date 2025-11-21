@@ -1,8 +1,6 @@
-const { Router } = require("express");
 const Review = require("../models/reviews");
-const mongoose = require("mongoose");
 
-// GET todas
+// Obtener todas las reseñas
 exports.obtenerReseñas = async (req, res) => {
   try {
     const reseñas = await Review.find();
@@ -12,32 +10,36 @@ exports.obtenerReseñas = async (req, res) => {
   }
 };
 
-// GET por juego
+// Obtener reseñas por nombre de juego
 exports.obtenerReseñasPorJuego = async (req, res) => {
   try {
-    const reseñas = await Review.find({ juegoId: req.params.juegoId });
+    const reseñas = await Review.find({ gameName: req.params.gameName });
     res.json(reseñas);
   } catch (error) {
     res.status(500).json({ error: "Error al obtener reseñas por juego" });
   }
 };
 
-// POST crear
+// Crear nueva reseña
 exports.crearReseña = async (req, res) => {
   try {
     console.log("Body recibido:", req.body);
 
-    const { juegoId, user, rating, comment } = req.body;
+    const gameName = String(req.body?.gameName ?? "").trim();
+    const user = String(req.body?.user ?? "").trim();
+    const comment = String(req.body?.comment ?? "").trim();
+    const rating = Number(req.body?.rating);
 
-    if (!juegoId || !user || rating == null || !comment) {
+    if (!gameName || !user || !comment || Number.isNaN(rating)) {
       return res.status(400).json({ error: "Faltan campos obligatorios" });
     }
 
     const nuevaReseña = await Review.create({
-      juegoId,
+      gameName,
       user,
       rating,
       comment,
+      date: new Date()
     });
 
     return res.status(201).json(nuevaReseña);
@@ -45,12 +47,12 @@ exports.crearReseña = async (req, res) => {
     console.error("Error al crear reseña:", error);
     return res.status(500).json({
       error: "Error al crear reseña",
-      details: error.message,
+      details: error.message
     });
   }
 };
 
-// PUT actualizar
+// Actualizar reseña existente
 exports.actualizarReseña = async (req, res) => {
   try {
     const reseña = await Review.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -60,8 +62,8 @@ exports.actualizarReseña = async (req, res) => {
   }
 };
 
-// DELETE
-router.delete = async (req, res) => {
+// Eliminar reseña
+exports.eliminarReseña = async (req, res) => {
   try {
     await Review.findByIdAndDelete(req.params.id);
     res.json({ mensaje: "Reseña eliminada" });
